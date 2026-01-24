@@ -25,34 +25,9 @@
 struct Substitution {
   int ObfTimes; // sub_loop:1
   uint32_t ObfProbRate; // sub_prob:50
-  Substitution();
-
-	void (Substitution::*funcAdd[NUMBER_ADD_SUBST])(BinaryOperator *bo);
-  void (Substitution::*funcSub[NUMBER_SUB_SUBST])(BinaryOperator *bo);
-  void (Substitution::*funcAnd[NUMBER_AND_SUBST])(BinaryOperator *bo);
-  void (Substitution::*funcOr[NUMBER_OR_SUBST])(BinaryOperator *bo);
-  void (Substitution::*funcXor[NUMBER_XOR_SUBST])(BinaryOperator *bo);
 
   bool runOnFunction(Function &F);
   bool substitute(Function *f);
-
-  void addNeg(BinaryOperator *bo);
-  void addDoubleNeg(BinaryOperator *bo);
-  void addRand(BinaryOperator *bo);
-  void addRand2(BinaryOperator *bo);
-
-  void subNeg(BinaryOperator *bo);
-  void subRand(BinaryOperator *bo);
-  void subRand2(BinaryOperator *bo);
-
-  void andSubstitution(BinaryOperator *bo);
-  void andSubstitutionRand(BinaryOperator *bo);
-
-  void orSubstitution(BinaryOperator *bo);
-  void orSubstitutionRand(BinaryOperator *bo);
-
-  void xorSubstitution(BinaryOperator *bo);
-  void xorSubstitutionRand(BinaryOperator *bo);
 };
 
 #endif
