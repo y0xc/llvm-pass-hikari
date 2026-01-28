@@ -1,3 +1,135 @@
+# For English
+
+## Introduction
+
+This project is based on `LLVM NewPass` and turns `original OLLVM` and `Hikari` into `standalone Pass`, with the following goals:
+* Verify that `IR` level obfuscation can be implemented using independent `Pass`
+* Assist in validating another project: `ida_mcp`
+
+This project has been tested on `macOS 15` with `LLVM 15–19`. Because it preserves the original code as much as possible (with minimal modifications), it does not provide enhancements in obfuscation strength. If you’re interested in stronger obfuscation capabilities, you can follow my other project: `SLLVM`.
+
+Pros and cons of implementing obfuscation as independent `Pass`:
+* `Pro #1:` If you already installed `LLVM` via `Homebrew` (macOS), `apt` (Debian), etc., you don’t need to build `LLVM` yourself—faster development iteration
+* `Pro #2:` `Pass` can be compiled quickly and the output binaries are small
+* `Con #1:` You must use a matching `Clang`—at minimum, the major `LLVM` version must match
+
+## Strategy
+
+In many real-world projects, it’s often impossible to obfuscate the entire project due to reasons such as:
+* The project is large, has many dependencies, or uses many `header-only` libraries; obfuscating too much unnecessary code makes the final binary too large
+* The project is large with many dependencies; using flattening (or other techniques) on unnecessary code makes compile time too long or even causes the build to hang
+* Obfuscating complex algorithms increases runtime overhead significantly; flattening typically increases runtime by `10%+`
+* Excessive obfuscation may violate `AppStore` / `GooglePlay` policies (e.g., may prevent publishing)
+
+In practice, you often need different obfuscation levels based on the importance of modules/functions. Therefore, a policy is needed to specify which modules/functions use which obfuscation options. Common strategy configuration approaches in open-source `OLLVM` include:
+* Add command-line options only to modules that need obfuscation (e.g., `-llvm -fla`). This works with any compiler frontend that supports LLVM command-line options.
+* Use environment variables to specify obfuscation options
+* Annotate functions that should be obfuscated, e.g. `__attribute((__annotate__(("fla"))))` (new syntax: `[[clang::annotate("fla")]]`). This only supports `C/C++`; `Objective-C` and other languages do not support it.
+* Use a marker function inside functions that should be obfuscated, as shown below (this supports `Objective-C`):
+```objc
+extern void hikari_fla(void);
+@implementation foo2:NSObject
++(void)foo{
+  hikari_fla();
+  NSLog(@"FOOOO2");
+}
+@end
+```
+
+### `Pass` Policy Syntax
+
+All of the approaches above have limitations: they either require too much code modification, cannot control at function granularity, or only support specific languages. This project uses a configuration file to specify which functions and modules should be obfuscated, making it compatible with most compiler frontends and development languages.
+
+The policy file is `policy.json` in the working directory, provided by the user. Fields are:
+|                   | Type       | Meaning                                | Required |
+| :---------------- | :--------- | :------------------------------------- | :------- |
+| `globals`         | dictionary | Global options                         | No       |
+| `policy_map`      | dictionary | Mapping of `policy name -> option set` | Yes      |
+| `policies`        | array      | All policy rules                       | Yes      |
+| `policies.module` | string     | Regex match for module name            | Yes      |
+| `policies.func`   | string     | Regex match for function name          | Yes      |
+| `policies.policy` | string     | Policy name, refers to `policy_map`    | Yes      |
+
+Rules:
+* Forward override: In the `policies` array, if a later rule matches a subset of `module`/`func` matched by an earlier rule, the later rule overrides the earlier one.
+* Comments supported: Any non-required sub-field supports `#` comments, e.g. `"#enable-strcry": true`
+* Name demangling supported: My other project `SLLVM` supports matching `module`/`func` even under name obfuscation for languages like `C++`/`Swift`
+
+
+```json
+{
+    "globals": {
+        "acd-use-initialize": true,
+        ...
+    },
+    "policy_map": {
+        "test_pol": {
+            "enable-strcry": true,
+            "enable-splitobf": false,
+            "split_num": 2,
+            ...
+        }
+    },
+    "policies": [
+        {
+            "module": ".*",
+            "func": ".*",
+            "policy": "test_pol"
+        }
+    ]
+}
+```
+
+In the `test` directory of each subproject (`original OLLVM / Hikari / ...`), you can find a `policy.json` that contains all configurable fields.
+
+## Build
+
+If you can locate LLVM’s build directory (for example, if you installed LLVM via `Homebrew` (macOS) or `apt` (Debian), you can find `./cmake/AddLLVM.cmake`), then you can skip building LLVM:
+```bash
+# optional: -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_BUILD_TYPE=Debug
+cmake -S llvm -G Ninja -B llvm_build_dir
+cmake --build llvm_build_dir
+```
+
+Example: macOS + original OLLVM
+```bash
+git clone https://github.com/lich4/llvm-pass-hikari
+cd llvm-pass-hikari
+export LLVM_DIR=/path/to/llvm_build_dir
+cmake -S obfuscator -G Ninja -B obfuscator/build
+cmake --build obfuscator/build
+```
+
+## Test
+
+Example: macOS + original OLLVM. Notes:
+* The `Pass` must match the major version of the corresponding `LLVM/Clang`
+* If you get header-related errors when testing `objc++`, ensure the open-source `clang` version matches the `clang` version used by `Xcode`
+
+```bash
+cd test
+# test c
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib test.c -o test
+# test cpp
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -std=c++11 -stdlib=libc++ -lc++ test.cpp -o test
+# test objc
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -framework Foundation  test.m -o test
+# test objc++
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -framework Foundation -std=c++11 -stdlib=libc++ -lc++ test.mm -o test
+```
+
+## Adapting to Xcode
+
+Because the open-source LLVM `Clang` differs from Xcode’s `Clang`, a dynamic Pass cannot be used directly in Xcode. You can consider the following approaches:
+
+* In Xcode, set the `CC` variable to an open-source `clang` (e.g., `brew install llvm@15`), and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass path
+* In Xcode, set `CC` to a build script. The script logic is: “use `clang -emit-llvm` to generate bitcode first, then run `opt` to execute the Pass, and finally run `clang -c` to produce the object file as usual.” This approach can use Xcode’s built-in `Apple clang`, and has better compatibility with the `arm64e` architecture. (This repo includes my own script: `xcode_cc.sh`.)
+* Develop a dynamic Pass specifically for Xcode’s built-in `Apple clang`, and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass. This is more complex (you must handle many symbol conflicts) and is only suitable for developers highly proficient with LLVM. This approach can also use Apple clang directly and has better compatibility with `arm64e`.
+
+
+
+# For Chinese
+
 ## 简介
 
 本项目基于`LLVM NewPass`实现`原版OLLVM`和`Hikari`的`Pass`化，有以下目标:
@@ -14,10 +146,10 @@
 ## 策略
 
 在很多实际项目中，由于以下原因无法对整个项目完全混淆：
-* 项目较大，依赖较多，或使用了很多header-only的库，混淆了很多不需要混淆的代码，导致编译出来的二进制过大
+* 项目较大，依赖较多，或使用了很多`header-only`的库，混淆了很多不需要混淆的代码，导致编译出来的二进制过大
 * 项目较大，依赖较多，使用了平坦化(或其他方式)混淆了很多不需要混淆的代码，导致编译时间过久甚至卡死
 * 混淆了复杂算法，导致运行时耗时比正常大很多，一般使用平坦化后耗时会增加10%以上
-* 混淆过多可能不允许上架AppStore/GooglePlay等
+* 混淆过多可能不允许上架`AppStore`/`GooglePlay`等
 
 实际操作时, 常常需要根据模块/函数的重要性使用不同程度的混淆，因此需要配置策略来指定哪些模块/函数需要用哪种混淆，而开源的`OLLVM`常见设置策略的方式如下：
 * 对需要混淆的模块单独指定命令行参数，如`-llvm -fla`，这种方式兼容所有支持`LLVM`命令行参数的编译器前端
@@ -119,5 +251,4 @@ cd test
 * 在`Xcode`中指定`CC`变量为开源`clang`(如`brew install llvm@15`)，且指定`Other C Flags`的`-fpass-plugin`为对应`Pass`路径
 * 在`Xcode`中指定`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构. (本项目中公开本人自用的`xcode_cc.sh`)
 * 直接针对`Xcode`自带的`Apple clang`开发动态`Pass`，在`Xcode`中指定`Other C Flags`指定`-fpass-plugin`为`Pass`路径。此种方式复杂度较高，需要处理大量符号冲突，只适合精通`LLVM`的开发者。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
-
 
