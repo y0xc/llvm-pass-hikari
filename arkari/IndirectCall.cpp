@@ -2,8 +2,6 @@
 
 #define DEBUG_TYPE "icall"
 
-static unsigned pointerSize = 8;
-
 void IndirectCall::NumberCallees(Function &F) {
   for (auto &BB:F) {
     for (auto &I:BB) {
@@ -64,11 +62,8 @@ bool IndirectCall::runOnFunction(Function &Fn) {
     return false;
   }
 
-  uint64_t V = RandomEngine.get_uint64_t();
+  uint32_t V = RandomEngine.get_uint32_t();
   IntegerType *intType = Type::getInt32Ty(Ctx);
-  if (pointerSize == 8) {
-    intType = Type::getInt64Ty(Ctx);
-  }
   ConstantInt *EncKey = ConstantInt::get(intType, V, false);
   ConstantInt *EncKey1 = ConstantInt::get(intType, -V, false);
 

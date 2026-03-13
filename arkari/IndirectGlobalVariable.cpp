@@ -3,8 +3,6 @@
 
 #define DEBUG_TYPE "indgv"
 
-static unsigned pointerSize = 8;
-
 void IndirectGlobalVariable::NumberGlobalVariable(Function &F) {
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
     for (User::op_iterator op = (*I).op_begin(); op != (*I).op_end(); ++op) {
@@ -54,11 +52,8 @@ bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
     return false;
   }
 
-  uint64_t V = RandomEngine.get_uint64_t();
+  uint32_t V = RandomEngine.get_uint32_t();
   IntegerType* intType = Type::getInt32Ty(Ctx);
-  if (pointerSize == 8) {
-    intType = Type::getInt64Ty(Ctx);
-  }
 
   ConstantInt *EncKey = ConstantInt::get(intType, V, false);
   ConstantInt *EncKey1 = ConstantInt::get(intType, -V, false);
