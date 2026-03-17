@@ -129,12 +129,26 @@ cd test
 
 ## Adapting to Xcode
 
-Because the open-source LLVM `Clang` differs from Xcode’s `Clang`, a dynamic Pass cannot be used directly in Xcode. You can consider the following approaches:
+### Clang
 
-* In `Xcode - Build Settings`, set the `CC` variable to an open-source `clang` (e.g., `brew install llvm@15`), and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass path
-* In `Xcode - Build Settings`, set `CC` to a build script. The script logic is: “use `clang -emit-llvm` to generate bitcode first, then run `opt` to execute the Pass, and finally run `clang -c` to produce the object file as usual.” This approach can use Xcode’s built-in `Apple clang`, and has better compatibility with the `arm64e` architecture. (This repo includes my own script: `xcode_cc.sh`.)
-* Develop a dynamic Pass specifically for Xcode’s built-in `Apple clang`, and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass. This is more complex (you must handle many symbol conflicts) and is only suitable for developers highly proficient with LLVM. This approach can also use Apple clang directly and has better compatibility with `arm64e`.
+Since open-source LLVM Clang differs from Xcode's Clang, dynamic passes cannot be used directly within Xcode. You may consider the following approaches:
+* **Use Open-Source Clang**: In Xcode - Build Settings, set the `CC` variable to point to an open-source clang (e.g., installed via brew install llvm@15), and specify the pass path using -fpass-plugin in Other C Flags.
+* **Use a Wrapper Script**: Set the `CC` variable to a compilation script. The script logic should follow these steps, This method allows you to use the built-in Apple Clang, providing better compatibility with the arm64e architecture. (The script xcode_cc.sh used in this project is provided as a reference.):
+    * Generate bitcode using `clang -emit-llvm`.
+    * Run `opt` to execute the Pass.
+    * Use `clang -c` to generate the final object (.obj) file.
+* **Direct Apple Clang Development**: Develop a dynamic Pass specifically for Apple Clang and specify the Pass path via -fpass-plugin in Other C Flags. This approach is highly complex, as it requires resolving numerous symbol conflicts, and is only recommended for developers proficient in LLVM. This also maintains native support for arm64e.
 
+Instead of defining the `CC` variable directly in the UI, you can create a Config.xcconfig file and define it there; the underlying mechanism is identical.
+
+### Swift
+
+For Swift, the logic is similar to Clang. However, instead of CC, you must define the SWIFT_EXEC variable. This project provides xcode_swift.sh as a reference script. Your Config.xcconfig should look like this:
+```
+SWIFT_EXEC = /path/to/xcode_swift.sh
+SWIFT_USE_INTEGRATED_DRIVER = NO
+```
+Alternatively, you can achieve the same result by creating these two variables directly in `Xcode - Build Settings`.
 
 
 ## 简介
