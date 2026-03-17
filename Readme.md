@@ -53,6 +53,7 @@ The policy file is `policy.json` in the working directory, provided by the user.
 Rules:
 * A policy that specifies only the `module` field is a `module-level` policy; a policy that specifies both `module` and `func` is a `function-level` policy
 * Forward override: For `function-level` policies in the `policies` array, if a later item’s matched `module`/`func` set is a subset of an earlier item’s matches, it overrides the earlier policy. The same applies to `module-level` policies.
+* Inheritance is supported: the base strategy can be specified in the `base` field.
 * Comments supported: Any optional sub-field supports `#` comments, e.g. `"#enable-strcry": true`
 * Name demangling supported: My other project `SLLVM` supports matching `module`/`func` even under name obfuscation for languages like `C++`/`Swift`
 * The `enable-dump` field in a policy is used to print module IR / function IR (depending on the policy type)
@@ -130,8 +131,8 @@ cd test
 
 Because the open-source LLVM `Clang` differs from Xcode’s `Clang`, a dynamic Pass cannot be used directly in Xcode. You can consider the following approaches:
 
-* In Xcode, set the `CC` variable to an open-source `clang` (e.g., `brew install llvm@15`), and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass path
-* In Xcode, set `CC` to a build script. The script logic is: “use `clang -emit-llvm` to generate bitcode first, then run `opt` to execute the Pass, and finally run `clang -c` to produce the object file as usual.” This approach can use Xcode’s built-in `Apple clang`, and has better compatibility with the `arm64e` architecture. (This repo includes my own script: `xcode_cc.sh`.)
+* In `Xcode - Build Settings`, set the `CC` variable to an open-source `clang` (e.g., `brew install llvm@15`), and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass path
+* In `Xcode - Build Settings`, set `CC` to a build script. The script logic is: “use `clang -emit-llvm` to generate bitcode first, then run `opt` to execute the Pass, and finally run `clang -c` to produce the object file as usual.” This approach can use Xcode’s built-in `Apple clang`, and has better compatibility with the `arm64e` architecture. (This repo includes my own script: `xcode_cc.sh`.)
 * Develop a dynamic Pass specifically for Xcode’s built-in `Apple clang`, and set `Other C Flags` to include `-fpass-plugin` pointing to the Pass. This is more complex (you must handle many symbol conflicts) and is only suitable for developers highly proficient with LLVM. This approach can also use Apple clang directly and has better compatibility with `arm64e`.
 
 
@@ -187,6 +188,7 @@ extern void hikari_fla(void);
 语法如下：
 * 仅指定`module`字段的策略为模块级策略，同时指定`module`/`func`字段的策略为函数级策略
 * 前向覆盖：对于`policies`数组中的函数级策略，如果后面的项匹配的`module`/`func`是在其之前项匹配的子集，则覆盖之前的策略；模块级策略同理
+* 支持继承：通过`base`字段指定基策略
 * 支持注释：非必须的子字段，都支持`#`注释，如`"#enable-strcry": true`
 * 支持名称混淆：本人另一个项目`SLLVM`支持`c++`/`swift`等语言名称混淆情况下的`module`/`func`匹配
 * 策略中`enable-dump`字段用于打印模块IR/函数IR(取决于策略类型)
@@ -262,8 +264,21 @@ cd test
 
 ## 适配`Xcode`
 
+### Clang
+
 由于开源`LLVM`的`Clang`不同于`Xcode`的`Clang`，因此动态`Pass`不能直接用于`Xcode`，可以考虑以下方式：
-* 在`Xcode`中指定`CC`变量为开源`clang`(如`brew install llvm@15`)，且指定`Other C Flags`的`-fpass-plugin`为对应`Pass`路径
-* 在`Xcode`中指定`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构. (本项目中公开本人自用的`xcode_cc.sh`)
+* 在`Xcode - Build Settings`中创建`CC`变量为开源`clang`(如`brew install llvm@15`)，且指定`Other C Flags`的`-fpass-plugin`为对应`Pass`路径
+* 在`Xcode - Build Settings`中创建`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构. (本项目中公开本人自用的`xcode_cc.sh`)
 * 直接针对`Xcode`自带的`Apple clang`开发动态`Pass`，在`Xcode`中指定`Other C Flags`指定`-fpass-plugin`为`Pass`路径。此种方式复杂度较高，需要处理大量符号冲突，只适合精通`LLVM`的开发者。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
+
+除了指定`CC`变量, 还可以创建`Config.xcconfig`并在其中创建`CC`变量, 本质是一样的. 本项目中的`xcode_cc.sh`为参考脚本
+
+### Swift
+
+对于Swift可以参考Clang, 只是不是创建`CC`而是`SWIFT_EXEC`, 本项目中的`xcode_swift.sh`为参考脚本, `Config.xcconfig`如下:
+```
+SWIFT_EXEC = /path/to/xcode_swift.sh
+SWIFT_USE_INTEGRATED_DRIVER = NO
+```
+如果直接在`Xcode - Build Settings`分别创建这2个变量也是一样的
 
