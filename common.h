@@ -5,6 +5,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/NoFolder.h"
 #if LLVM_VERSION_MAJOR >= 16
@@ -68,6 +69,12 @@ using namespace std;
 
 #if LLVM_VERSION_MAJOR <= 15
 #define starts_with startswith
+#endif
+
+#if LLVM_VERSION_MAJOR <= 20
+#define getModuleTriple(M) ((M).getTargetTriple())
+#else
+#define getModuleTriple(M) ((M).getTargetTriple().str())
 #endif
 
 #endif 

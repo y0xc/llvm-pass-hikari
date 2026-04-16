@@ -580,9 +580,9 @@ public:
   }
 
   /// Determine whether this data operand is not captured.
-  bool doesNotCapture(unsigned OpNo) const {
-    return dataOperandHasImpliedAttr(OpNo + 1, Attribute::NoCapture);
-  }
+  //bool doesNotCapture(unsigned OpNo) const {
+  //  return dataOperandHasImpliedAttr(OpNo + 1, Attribute::NoCapture);
+  //}
 
   /// Determine whether this argument is passed by value.
   bool isByValArgument(unsigned ArgNo) const {

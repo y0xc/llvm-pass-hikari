@@ -21,7 +21,7 @@ bool AntiClassDump::doInitialization(Module &M) {
   if (triple.getVendor() != Triple::VendorType::Apple) {
     // We only support AAPL's ObjC Implementation ATM
     errs()
-        << M.getTargetTriple()
+        << getModuleTriple(M)
         << " is Not Supported For LLVM AntiClassDump\nProbably GNU Step?\n";
     return false;
   }

@@ -367,8 +367,7 @@ void StringEncryption::HandleFunction(Function *Func) {
                   PtrauthGV->getInitializer()->getOperand(2))) {
             if (GlobalVariable *GV2 =
                     dyn_cast<GlobalVariable>(CE->getOperand(0))) {
-              if (GV->getNumUses() <= 1 &&
-                  GV2->getGlobalIdentifier() == GV->getGlobalIdentifier())
+              if (GV->getNumUses() <= 1 && GV2 == GV)
                 PtrauthGV->getInitializer()->setOperand(
                     2, ConstantExpr::getPtrToInt(
                             M->getGlobalVariable(
@@ -377,8 +376,7 @@ void StringEncryption::HandleFunction(Function *Func) {
             }
           } else if (GlobalVariable *GV2 = dyn_cast<GlobalVariable>(
                           PtrauthGV->getInitializer()->getOperand(2)))
-            if (GV->getNumUses() <= 1 &&
-                GV2->getGlobalIdentifier() == GV->getGlobalIdentifier())
+            if (GV->getNumUses() <= 1 && GV2 == GV)
               PtrauthGV->getInitializer()->setOperand(
                   2, ConstantExpr::getPtrToInt(
                           M->getGlobalVariable(
@@ -435,7 +433,11 @@ void StringEncryption::HandleFunction(Function *Func) {
   ReplaceInstWithInst(A->getTerminator(), newBr);
   // Insert DecryptionCode
   HandleDecryptionBlock(B, C, GV2Keys);
+#if LLVM_VERSION_MAJOR <= 19
   IRBuilder<> IRB(A->getFirstNonPHIOrDbgOrLifetime());
+#else
+  IRBuilder<> IRB(A, A->getFirstNonPHIOrDbgOrLifetime());
+#endif
   // Add atomic load checking status in A
   LoadInst *LI = IRB.CreateLoad(StatusGV->getValueType(), StatusGV,
                                 "LoadEncryptionStatus");

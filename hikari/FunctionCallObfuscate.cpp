@@ -287,7 +287,7 @@ bool FunctionCallObfuscate::runOnFunction(Function &F) {
               dlopen_flag = ANDROID32_FLAG;
           } else {
             errs() << "[FunctionCallObfuscate] Unsupported Target Triple:"
-                    << M->getTargetTriple() << "\n";
+                    << getModuleTriple(*M) << "\n";
             errs() << "[FunctionCallObfuscate] Applying Default Signature:"
                     << dlopen_flag << "\n";
           }

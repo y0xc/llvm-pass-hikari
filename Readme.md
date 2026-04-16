@@ -256,6 +256,9 @@ cd llvm-pass-hikari
 export LLVM_DIR=/path/to/llvm_build_dir
 cmake -S obfuscator -G Ninja -B obfuscator/build
 cmake --build obfuscator/build
+
+cmake -S hikari -G Ninja -B hikari/build
+cmake --build hikari/build
 ```
 
 ## 测试

@@ -38,7 +38,7 @@ string ts_to_date(int64_t ts) {
     return buff;
 }
 
-string get_module_file(Module& M) {
+string getModuleFile(Module& M) {
     string file = M.getSourceFileName();
     if (file.empty()) {
         file = M.getName().str();

@@ -111,7 +111,7 @@ public:
         if (module_policy.value("has_fco", false)) {
             Triple Tri(M.getTargetTriple());
             if (!Tri.isAndroid() && !Tri.isOSDarwin()) {
-                errs() << "Unsupported Target Triple:"<< M.getTargetTriple() << "\n";
+                errs() << "Unsupported Target Triple:"<< getModuleTriple(M) << "\n";
             } else {
                 Timer timer("fco", "fco", tg);
                 timer.startTimer();

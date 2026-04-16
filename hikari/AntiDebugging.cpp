@@ -88,7 +88,7 @@ bool AntiDebugging::runOnFunction(Function &F) {
       return false;
     if (triple.isOSDarwin() && triple.isAArch64()) {
       errs() << "Injecting Inline Assembly AntiDebugging For:"
-              << F.getParent()->getTargetTriple() << "\n";
+              << getModuleTriple(*F.getParent()) << "\n";
       std::string antidebugasm = "";
       switch (cryptoutils->get_range(2)) {
       case 0: {
@@ -197,7 +197,7 @@ bool AntiDebugging::runOnFunction(Function &F) {
 #endif
     } else {
       errs() << "Unsupported Inline Assembly AntiDebugging Target: "
-              << F.getParent()->getTargetTriple() << "\n";
+              << getModuleTriple(*F.getParent()) << "\n";
     }
   }
   return true;

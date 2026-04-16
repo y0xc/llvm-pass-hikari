@@ -8,7 +8,7 @@ uint64_t get_ts_ms();
 vector<string> split(const string& s, const string& d);
 bool startswith(const string& str, const string& prefix);
 string ts_to_date(int64_t ts);
-string get_module_file(Module& M);
+string getModuleFile(Module& M);
 bool isNameReserved(Value* V);
 bool ensure_dir(const string& path);
 bool dumpIR(const string& suffix, Function* F);
@@ -141,7 +141,7 @@ public:
         if (mod_pol_lst.empty()) {
             return module_config;
         }
-        filesystem::path mod_path = get_module_file(M);
+        filesystem::path mod_path = getModuleFile(M);
         if (mod_path.is_relative()) {
             mod_path = src_root / mod_path;
         }

@@ -187,7 +187,12 @@ void BogusControlFlow::addBogusFlow(BasicBlock * basicBlock, Function &F) {
   // for the first block. We have to let the phi nodes in the first part, because they
   // actually are updated in the second part according to them.
   BasicBlock::iterator i1 = basicBlock->begin();
-  if(basicBlock->getFirstNonPHIOrDbgOrLifetime())
+  
+#if LLVM_VERSION_MAJOR <= 19
+  if (basicBlock->getFirstNonPHIOrDbgOrLifetime())
+#else
+  if (basicBlock->getFirstNonPHIOrDbgOrLifetime() != basicBlock->end())
+#endif
     i1 = (BasicBlock::iterator)basicBlock->getFirstNonPHIOrDbgOrLifetime();
   Twine *var;
   var = new Twine("originalBB");
