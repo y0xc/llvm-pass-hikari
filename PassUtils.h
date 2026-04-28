@@ -103,11 +103,11 @@ public:
         filesystem::path fs_pwd = filesystem::current_path();
         filesystem::path fs_json_path = fs_pwd / POLICY_PATH;
         if (!filesystem::exists(fs_json_path)) {
-            errs() << "Error: conf not found: " << fs_json_path << "\n";
+            errs() << "Error: conf not found: " << fs_json_path.generic_string() << "\n";
             return;
         }
-        errs() << "Conf:           " << fs_json_path << "\n";
-        ifstream ifs(fs_json_path.string());
+        errs() << "Conf:           " << fs_json_path.generic_string() << "\n";
+        ifstream ifs(fs_json_path.generic_string());
         try {
             conf = nlohmann::json::parse(ifs);
         } catch (const exception& exc) {
@@ -120,9 +120,9 @@ public:
         if (!conf.contains("policies")) {
             conf["policies"] = nlohmann::json::array();
         }
-        errs() << "Root:           " << fs_pwd.string() << "\n"; // 配置文件所在路径
+        errs() << "Root:           " << fs_pwd.generic_string() << "\n"; // 配置文件所在路径
         if (!conf.contains("src_root")) {
-            conf["src_root"] = fs_pwd.string(); // 源文件路径
+            conf["src_root"] = fs_pwd.generic_string(); // 源文件路径
         }
         errs() << "SrcRoot:        " << conf["src_root"].get<string>() << "\n";
         removeUnusedKey(conf);
@@ -165,11 +165,11 @@ public:
             if (match_path.is_relative()) {
                 match_path = filesystem::path(src_root) / match_path;
             }
-            string match_path_s = match_path.string();
+            string match_path_s = match_path.generic_string();
             if (match_path_s.find("./") != string::npos || match_path_s.find("../") != string::npos) {
                 match_path = weakly_canonical(match_path);
             }
-            if (!regex_match(mod_path.string(), regex(match_path.string()))) { // 后面的规则覆盖前面的
+            if (!regex_match(mod_path.generic_string(), regex(match_path.generic_string()))) { // 后面的规则覆盖前面的
                 continue;
             }
             string policy_name = item["policy"];
