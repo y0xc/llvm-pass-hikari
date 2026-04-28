@@ -6,7 +6,7 @@ This project is based on `LLVM NewPass` and turns `original OLLVM` and `Hikari` 
 * Verify that `IR` level obfuscation can be implemented using independent `Pass`
 * Assist in validating another project: `ida_mcp`
 
-This project has been tested on `macOS 15` with `LLVM 15–19`. Because it preserves the original code as much as possible (with minimal modifications), it does not provide enhancements in obfuscation strength. If you’re interested in stronger obfuscation capabilities, you can follow my other project: `SLLVM`.
+This project has been tested on `macOS 15` with `LLVM 15–19`. Because it preserves the original code as much as possible (with minimal modifications), it does not provide enhancements in obfuscation strength. If you’re interested in stronger obfuscation capabilities, you can follow my other project: `SLLVM`. There is no plan for Windows support.
 
 Pros and cons of implementing obfuscation as independent `Pass`:
 * `Pro #1:` If you already installed `LLVM` via `Homebrew` (macOS), `apt` (Debian), etc., you don’t need to build `LLVM` yourself—faster development iteration
@@ -157,7 +157,7 @@ Alternatively, you can achieve the same result by creating these two variables d
 * 验证可以用独立`Pass`实现`IR`层混淆
 * 用于辅助验证另一个项目`ida_mcp`
 
-本项目在`MacOS15`+`LLVM15-19`上测试，因为最大限度保留原始代码未改动因此不会有混淆功能方面的增强。对更强的混淆功能有兴趣的可以关注我的另一个项目`SLLVM`
+本项目在`MacOS15`+`LLVM15-19`上测试，因为最大限度保留原始代码未改动因此不会有混淆功能方面的增强。对更强的混淆功能有兴趣的可以关注我的另一个项目`SLLVM`。本项目没有对Windows支持的计划。
 
 使用独立`Pass`实现混淆的优缺点：
 * 优点1：如果已经用`Homebrew`(Mac)/`apt`(Debian)等安装过`LLVM`则无需编译`LLVM`，开发速度快
